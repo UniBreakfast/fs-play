@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/UniBreakfast/fs-play/issues"
   },
-  "homepage": "https://github.com/UniBreakfast/fs-play#readme"
+  "homepage": "https://github.com/UniBreakfast/fs-play#readme",
+  "devDependencies": {
+    "c4console": "^1.0.5"
+  }
 }
