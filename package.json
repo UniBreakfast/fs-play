@@ -4,7 +4,7 @@
   "description": "Experimental web server to play with fs capabilities. It allows client to read, write, edit and delete folders and files.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx jest --watch"
   },
   "repository": {
     "type": "git",
@@ -16,7 +16,9 @@
     "url": "https://github.com/UniBreakfast/fs-play/issues"
   },
   "homepage": "https://github.com/UniBreakfast/fs-play#readme",
-  "devDependencies": {},
+  "devDependencies": {
+    "jest": "^26.0.1"
+  },
   "dependencies": {
     "c4console": "^1.0.7"
   }
