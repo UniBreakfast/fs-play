@@ -3,8 +3,20 @@ try { require('c4console') } catch {}
 const fs = require('fs'),  fsp = fs.promises,
   {createServer, ServerResponse} = require('http'),
   Stream = require('stream'),
-  {stat, readdir} = fsp,  {stringify} = JSON,  {assign, fromEntries} = Object,
+  {stringify, parse} = JSON,  {assign, fromEntries} = Object,
+
   all = Promise.all.bind(Promise),
+
+  {stat, readdir, copyFile} = fsp,
+  mkdir = path => fsp.mkdir(path, {recursive: true}),
+  [copy, move] = [copyFile, fsp.rename].map(fn => (path1,
+    path2=path1.replace(/(^|[\\/]+)[^\\/]*$/, ''),
+    name=path1.match(/(^|[\\/])([^\\/]*)$/)[2])=>
+      mkdir(path2||'.').then(()=> fn(path1, (path2||'.')+'/'+name))),
+  [dup, rename] = [copy, move].map(fn =>
+    (path, name)=> fn(path, undefined, name)),
+  ops = {mkdir, copy, move, dup, rename},
+
   date2str = date => stringify(date).slice(1,20).replace('T',' '),
 
   explore = path => stat(path).then(stats => {
@@ -53,8 +65,10 @@ Stream.prototype.pipeIntoFile = function (path) {
   const dir = path.replace(/(^|\/)[^\/]*$/, '')
   return new Promise(async (resolve, reject)=> {
     try {
-      if (dir) await fsp.mkdir(dir, {recursive: true})
-      this.on('end', resolve).pipe(fs.createWriteStream(path))
+      if ((await stat(path).catch(Boolean)).isDirectory?.call()) throw 0
+      if (dir) await mkdir(dir)
+      this.on('end', resolve).on('error', reject)
+        .pipe(fs.createWriteStream(path))
     } catch { reject() }
   })
 }
@@ -67,11 +81,7 @@ ServerResponse.prototype.json = function (obj) {
 createServer(async (req, resp)=> {
   let {method, url} = req
   url = decodeURI(url)
-  if (method=='PUT')  req.pipeIntoFile(url)
-    .then(()=> resp.end('ok'), ()=> resp.end('error'))
-  else if (method=='DELETE')  remove(__dirname+url)
-    .then(()=> resp.end('ok'), ()=> resp.end('error'))
-  else if (method=='GET') {
+  if (method=='GET') {
     try {
       if (url.endsWith('??'))
         resp.json(await explore(__dirname+url.replace(/[\\/]?\?\?/, '')))
@@ -91,8 +101,18 @@ createServer(async (req, resp)=> {
       resp.end('"... sorry, '+url+' is not available"')
     }
   }
+  else if (method=='POST') {
+    const {op, args} = parse(await wait(req))
+    try { await ops[op](...args).then(()=> resp.end('ok')) }
+    catch { resp.end('error') }
+  }
+  else if (method=='PUT')  req.pipeIntoFile(url)
+    .then(()=> resp.end('ok'), ()=> resp.end('error'))
+  else if (method=='DELETE')  remove(__dirname+url)
+    .then(()=> resp.end('ok'), ()=> resp.end('error'))
+
 }).listen(3000,
   ()=> (console.clear(), c('Server started at http://localhost:3000')))
 
 
-assign(global, {date2str, fs, fsp, __dirname, explore, recon, scout, wait})
+assign(global, {date2str, fs, fsp, stat, rename, dup, mkdir, copy, move, __dirname, explore, recon, scout, wait})
