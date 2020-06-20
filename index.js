@@ -33,18 +33,19 @@ const fs = require('fs'),  fsp = fs.promises,
     stream.on('error', reject).on('data', part => parts.push(part))
       .on('end', ()=> resolve(Buffer.concat(parts).toString('utf8')))),
 
+  utf = '; charset=utf-8',
   typeDict = {
-    html: 'text/html',
-    json: 'application/json',
-    css: 'text/css',
-    txt: 'text/plain',
+    html: 'text/html'+utf,
+    json: 'application/json'+utf,
+    css: 'text/css'+utf,
+    txt: 'text/plain'+utf,
     ico: 'image/x-icon',
     jpg: 'image/jpeg',
     png: 'image/png',
     gif: 'image/gif',
-    svg: 'image/svg+xml',
+    svg: 'image/svg+xml'+utf,
     mp3: 'audio/mpeg',
-    js: 'application/javascript',
+    js: 'application/javascript'+utf,
   }
 
 Stream.prototype.pipeIntoFile = function (path) {
@@ -59,12 +60,13 @@ Stream.prototype.pipeIntoFile = function (path) {
 }
 
 ServerResponse.prototype.json = function (obj) {
-  this.setHeader('Content-Type', 'application/json')
+  this.setHeader('Content-Type', typeDict['json'])
   this.end(stringify(obj))
 }
 
 createServer(async (req, resp)=> {
   let {method, url} = req
+  url = decodeURI(url)
   if (method=='PUT')  req.pipeIntoFile(url)
     .then(()=> resp.end('ok'), ()=> resp.end('error'))
   else if (method=='DELETE')  remove(__dirname+url)
@@ -84,7 +86,10 @@ createServer(async (req, resp)=> {
         fs.createReadStream(path).pipe(resp)
         resp.setHeader('Content-Type', typeDict[ext])
       }
-    } catch { resp.end('"... sorry, '+url+' is not available"') }
+    } catch {
+      resp.setHeader('Content-Type', typeDict['json'])
+      resp.end('"... sorry, '+url+' is not available"')
+    }
   }
 }).listen(3000,
   ()=> (console.clear(), c('Server started at http://localhost:3000')))
