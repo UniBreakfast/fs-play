@@ -26,10 +26,26 @@ const fs = require('fs'),  fsp = fs.promises,
   scout = path =>
     recon(path).then(report => ({[path.match(/[^/\\]*$/)[0]]: report})),
 
+  remove = path => fsp.unlink(path).catch(()=>
+    fsp.rmdir(path, {recursive: true})),
 
   wait = (stream, parts=[])=> new Promise((resolve, reject)=>
     stream.on('error', reject).on('data', part => parts.push(part))
-      .on('end', ()=> resolve(Buffer.concat(parts).toString('utf8'))))
+      .on('end', ()=> resolve(Buffer.concat(parts).toString('utf8')))),
+
+  typeDict = {
+    html: 'text/html',
+    json: 'application/json',
+    css: 'text/css',
+    txt: 'text/plain',
+    ico: 'image/x-icon',
+    jpg: 'image/jpeg',
+    png: 'image/png',
+    gif: 'image/gif',
+    svg: 'image/svg+xml',
+    mp3: 'audio/mpeg',
+    js: 'application/javascript',
+  }
 
 Stream.prototype.pipeIntoFile = function (path) {
   path = path.replace(/^\/|\/$/g, '')
@@ -47,21 +63,29 @@ ServerResponse.prototype.json = function (obj) {
   this.end(stringify(obj))
 }
 
-createServer((req, resp)=> {
-  if (req.method == 'PUT')
-    req.pipeIntoFile(req.url)
-      .then(()=> resp.end('ok'))
-      .catch(()=> resp.end('error'))
-  else if (req.method == 'GET') {
-    if (req.url.endsWith('??'))
-      explore(__dirname+req.url.replace(/[\\/]?\?\?/, ''))
-        .then(descr => resp.json(descr))
-    else if (req.url.endsWith('?'))
-      scout(__dirname+req.url.replace(/[\\/]?\?/, ''))
-        .then(descr => resp.json(descr))
-    else resp.end('fetch now!')
-  }
+createServer(async (req, resp)=> {
+  let {method, url} = req
+  if (method=='PUT')  req.pipeIntoFile(url)
+    .then(()=> resp.end('ok'), ()=> resp.end('error'))
+  else if (method=='DELETE')  remove(__dirname+url)
+    .then(()=> resp.end('ok'), ()=> resp.end('error'))
+  else if (method=='GET') {
+    try {
+      if (url.endsWith('??'))
+        resp.json(await explore(__dirname+url.replace(/[\\/]?\?\?/, '')))
+      else if (url.endsWith('?'))
+        resp.json(await scout(__dirname+url.replace(/[\\/]?\?/, '')))
+      else {
+        let path = process.cwd()+url
+        if ((await stat(path).catch(_=> stat(path+='.html'))).isDirectory() &&
+          (await stat(path+='/index.html')).isDirectory()) throw 0
+        const match = path.match(/\.(\w+)$/), ext = match? match[1] : 'html'
 
+        fs.createReadStream(path).pipe(resp)
+        resp.setHeader('Content-Type', typeDict[ext])
+      }
+    } catch { resp.end('"... sorry, '+url+' is not available"') }
+  }
 }).listen(3000,
   ()=> (console.clear(), c('Server started at http://localhost:3000')))
 
