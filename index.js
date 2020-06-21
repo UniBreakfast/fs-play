@@ -57,6 +57,7 @@ const fs = require('fs'),  fsp = fs.promises,
     gif: 'image/gif',
     svg: 'image/svg+xml'+utf,
     mp3: 'audio/mpeg',
+    mp4: 'video/mp4',
     js: 'application/javascript'+utf,
   }
 
@@ -65,7 +66,7 @@ Stream.prototype.pipeIntoFile = function (path) {
   const dir = path.replace(/(^|\/)[^\/]*$/, '')
   return new Promise(async (resolve, reject)=> {
     try {
-      if ((await stat(path).catch(Boolean)).isDirectory?.call()) throw 0
+      if ((await stat(path).catch(_=>{}))?.isDirectory()) throw 0
       if (dir) await mkdir(dir)
       this.on('end', resolve).on('error', reject)
         .pipe(fs.createWriteStream(path))
@@ -96,7 +97,7 @@ createServer(async (req, resp)=> {
         fs.createReadStream(path).pipe(resp)
         resp.setHeader('Content-Type', typeDict[ext])
       }
-    } catch {
+    } catch (e) { e.c()
       resp.setHeader('Content-Type', typeDict['json'])
       resp.end('"... sorry, '+url+' is not available"')
     }

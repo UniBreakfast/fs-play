@@ -4,8 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Руссский</title>
+  <script src="script.js" defer></script>
+  <style>body {height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; flex-direction: column;} input {width: 300px; text-align: center;} div {background: gray; width: 200px; height: 200px;}</style>
 </head>
 <body>
-  <input type="file" name="" id="">
+  <input id="pathInp" placeholder="if want it in a subfolder">
+  <input id="nameInp" placeholder="if you want it to be named differently">
+  <button id="selectBtn">select file</button>
+  <button id="selectUploadBtn">select file and upload it</button>
+  <button id="uploadBtn">upload file</button>
+  <b id="informer"></b>
+  <div id="dropDiv"></div>
 </body>
 </html>
