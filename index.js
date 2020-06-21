@@ -99,18 +99,18 @@ createServer(async (req, resp)=> {
       }
     } catch (e) { e.c()
       resp.setHeader('Content-Type', typeDict['json'])
-      resp.end('"... sorry, '+url+' is not available"')
+      resp.statusCode = 404
+      resp.end('"sorry, '+url+' is not available"')
     }
   }
   else if (method=='POST') {
     const {op, args} = parse(await wait(req))
     try { await ops[op](...args).then(()=> resp.end('ok')) }
-    catch { resp.end('error') }
+    catch { assign(resp, {statusCode:400}).end(op+' operation failed') }
   }
   else if (method=='PUT')  req.pipeIntoFile(url)
-    .then(()=> resp.end('ok'), ()=> resp.end('error'))
-  else if (method=='DELETE')  remove(__dirname+url)
-    .then(()=> resp.end('ok'), ()=> resp.end('error'))
+    .then(()=> resp.end('ok'), ()=> assign(resp, {statusCode:409}).end('write error'))
+  else if (method=='DELETE')  remove(__dirname+url).then(()=> resp.end('ok'))
 
 }).listen(3000,
   ()=> (console.clear(), c('Server started at http://localhost:3000')))
