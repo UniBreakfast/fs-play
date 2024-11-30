@@ -1,7 +1,5 @@
 # [fs-play](https://github.com/UniBreakfast/fs-play)
 
-## One ultimate function to set up a dropzone element for files uploading
-
 # fs-glass
 
 `fs-glass` is a set of JavaScript modules that provide a transparent interface for performing file system operations over HTTP. It consists of a front-end module (`fs-glass-front.js`) for the client-side and a back-end module (`fs-glass-back.js`) for the server-side. The name "glass" signifies that while the modules are powerful and useful, they can be dangerous if misused—much like handling glass.
@@ -269,6 +267,10 @@ This project is licensed under the MIT License.
 ---
 
 **Note**: Remember that `fs-glass` is a powerful tool that should be used with caution. Always ensure that your server-side implementation includes proper security measures to prevent unauthorized access and operations.
+
+![image](https://github.com/user-attachments/assets/60c83dc5-4904-4a3d-a623-038aae4c0d4a)
+
+## One ultimate function to set up a dropzone element for files uploading
 
 # setUploader
 
